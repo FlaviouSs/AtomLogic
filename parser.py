@@ -5,18 +5,6 @@ import ply.yacc as yacc
 import lexical
 from lexical import tokens
 
-"""
-Current Grammar Definition (EBNF):
-----------------------------------
-circuit        ::= "CIRCUIT" ID "{" statement_list "}"
-statement_list ::= statement+
-statement      ::= input_decl | output_decl | assign_stmt
-input_decl     ::= "INPUT" id_list ";"
-output_decl    ::= "OUTPUT" id_list ";"
-id_list        ::= ID ("," ID)*
-assign_stmt    ::= ID "=" gate_expr ";"
-gate_expr      ::= "NOT" "(" ID ")" | ("AND" | "OR") "(" ID "," ID ")"
-"""
 
 def p_circuit(p):
     '''
