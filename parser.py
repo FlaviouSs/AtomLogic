@@ -9,7 +9,7 @@ from lexical import tokens
 Current Grammar Definition (EBNF):
 ----------------------------------
 circuit        ::= "CIRCUIT" ID "{" statement_list "}"
-statement_list ::= statement*
+statement_list ::= statement+
 statement      ::= input_decl | output_decl | assign_stmt
 input_decl     ::= "INPUT" id_list ";"
 output_decl    ::= "OUTPUT" id_list ";"
@@ -27,12 +27,12 @@ def p_circuit(p):
 def p_statement_list(p):
     '''
     statement_list : statement_list statement
-                   | empty
+                   | statement
     '''
     if len(p) == 3:
         p[0] = p[1] + [p[2]]
     else:
-        p[0] = []
+        p[0] = [p[1]]
 
 def p_statement(p):
     '''
@@ -82,12 +82,6 @@ def p_gate_expr_binary(p):
               | OR LPAREN ID COMMA ID RPAREN
     '''
     p[0] = ('gate', p[1], [p[3], p[5]])
-
-def p_empty(p):
-    '''
-    empty :
-    '''
-    pass
 
 def p_error(p):
     if p:
