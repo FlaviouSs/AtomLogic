@@ -1,6 +1,0 @@
-CIRCUIT teste {
-    INPUT A, B, C;
-    OUTPUT D;
-
-    D = AND(A, K);
-}

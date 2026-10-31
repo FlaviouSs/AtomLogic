@@ -1,0 +1,15 @@
+// Canonical Half Adder Circuit in AtomLogic DSL
+// Synthesizes XOR for Sum using only basic gates: AND, OR, and NOT.
+
+CIRCUIT HalfAdder {
+    INPUT A, B;
+    OUTPUT Sum, Carry;
+
+    // Carry bit
+    Carry = AND(A, B);
+
+    // Sum bit: A XOR B = (A OR B) AND NOT(A AND B)
+    or_ab = OR(A, B);
+    not_carry = NOT(Carry);
+    Sum = AND(or_ab, not_carry);
+}

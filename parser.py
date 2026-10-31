@@ -77,20 +77,85 @@ def p_error(p):
     else:
         print("Syntax error: unexpected end of file (EOF)")
 
+def print_ast_tree(node, prefix="", is_last=True):
+    """
+    Renders the Abstract Syntax Tree (AST) in a visual hierarchical tree format
+    using Unicode box-drawing characters.
+    """
+    if not isinstance(node, tuple):
+        return
+
+    tag = node[0]
+
+    # Root: CircuitNode
+    if tag == "circuit":
+        name, statements = node[1], node[2]
+        print(f"CircuitNode: \"{name}\"")
+        for i, stmt in enumerate(statements):
+            print_ast_tree(stmt, prefix="", is_last=(i == len(statements) - 1))
+
+    # Declaration nodes
+    elif tag == "inputs":
+        marker = "└── " if is_last else "├── "
+        print(f"{prefix}{marker}InputsNode: {node[1]}")
+
+    elif tag == "outputs":
+        marker = "└── " if is_last else "├── "
+        print(f"{prefix}{marker}OutputsNode: {node[1]}")
+
+    # Assignment node: target = gate_expr
+    elif tag == "assign":
+        target, gate = node[1], node[2]
+        marker = "└── " if is_last else "├── "
+        print(f"{prefix}{marker}AssignNode: \"{target}\"")
+        child_prefix = prefix + ("    " if is_last else "│   ")
+        print_ast_tree(gate, child_prefix, is_last=True)
+
+    # Gate expression node: GATE(inputs...)
+    elif tag == "gate":
+        op, operands = node[1], node[2]
+        marker = "└── " if is_last else "├── "
+        print(f"{prefix}{marker}GateNode: {op}")
+        child_prefix = prefix + ("    " if is_last else "│   ")
+        for i, operand in enumerate(operands):
+            op_marker = "└── " if i == len(operands) - 1 else "├── "
+            print(f"{child_prefix}{op_marker}Operand: \"{operand}\"")
+
 def main():
     lexer = lex.lex(module=lexical)
     parser = yacc.yacc()
 
+    # Parse CLI flags and positional arguments
+    flags = [arg for arg in sys.argv[1:] if arg.startswith('-')]
+    files = [arg for arg in sys.argv[1:] if not arg.startswith('-')]
+
+    show_tree = '--tree' in flags or '-t' in flags
+    show_both = '--both' in flags or '-b' in flags
+
+    def display_ast(ast):
+        if not ast:
+            return
+        if show_both:
+            print("\nGenerated Abstract Syntax Tree (Raw Tuples):")
+            pprint(ast)
+            print("\nGenerated Abstract Syntax Tree (Tree View):")
+            print_ast_tree(ast)
+        elif show_tree:
+            print("\nGenerated Abstract Syntax Tree (Tree View):")
+            print_ast_tree(ast)
+        else:
+            print("\nGenerated Abstract Syntax Tree (AST):")
+            pprint(ast)
+
     # Case 1: File provided as argument
-    if len(sys.argv) > 1:
-        filepath = sys.argv[1]
+    if files:
+        filepath = files[0]
         try:
             with open(filepath, 'r') as f:
                 code = f.read()
             print(f"Parsing file: {filepath}\n")
             ast = parser.parse(code, lexer=lexer)
-            print("\nGenerated Abstract Syntax Tree (AST):")
-            pprint(ast)
+            display_ast(ast)
         except FileNotFoundError:
             print(f"Error: File '{filepath}' not found.")
         return
@@ -99,7 +164,7 @@ def main():
     print("=== AtomLogic Parser Interactive Mode ===")
     print("Type/paste your circuit code.")
     print("Type 'END' on a new line or press Ctrl+D to parse.")
-    print("Or press Enter on an empty line to parse a built-in demo circuit.\n")
+    print("Flags: use --tree (-t) for tree view, or --both (-b) for both views.\n")
 
     lines = []
     try:
@@ -115,9 +180,7 @@ def main():
 
     print("\n--- Parsing Result ---")
     ast = parser.parse(user_code, lexer=lexer)
-    if ast:
-        print("\nGenerated Abstract Syntax Tree (AST):")
-        pprint(ast)
+    display_ast(ast)
 
 if __name__ == "__main__":
     main()
