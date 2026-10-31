@@ -1,5 +1,3 @@
-import sys
-from pprint import pprint
 import ply.lex as lex
 import ply.yacc as yacc
 import lexical
@@ -120,67 +118,3 @@ def print_ast_tree(node, prefix="", is_last=True):
         for i, operand in enumerate(operands):
             op_marker = "└── " if i == len(operands) - 1 else "├── "
             print(f"{child_prefix}{op_marker}Operand: \"{operand}\"")
-
-def main():
-    lexer = lex.lex(module=lexical)
-    parser = yacc.yacc()
-
-    # Parse CLI flags and positional arguments
-    flags = [arg for arg in sys.argv[1:] if arg.startswith('-')]
-    files = [arg for arg in sys.argv[1:] if not arg.startswith('-')]
-
-    show_tree = '--tree' in flags or '-t' in flags
-    show_both = '--both' in flags or '-b' in flags
-
-    def display_ast(ast):
-        if not ast:
-            return
-        if show_both:
-            print("\nGenerated Abstract Syntax Tree (Raw Tuples):")
-            pprint(ast)
-            print("\nGenerated Abstract Syntax Tree (Tree View):")
-            print_ast_tree(ast)
-        elif show_tree:
-            print("\nGenerated Abstract Syntax Tree (Tree View):")
-            print_ast_tree(ast)
-        else:
-            print("\nGenerated Abstract Syntax Tree (AST):")
-            pprint(ast)
-
-    # Case 1: File provided as argument
-    if files:
-        filepath = files[0]
-        try:
-            with open(filepath, 'r') as f:
-                code = f.read()
-            print(f"Parsing file: {filepath}\n")
-            ast = parser.parse(code, lexer=lexer)
-            display_ast(ast)
-        except FileNotFoundError:
-            print(f"Error: File '{filepath}' not found.")
-        return
-
-    # Case 2: Interactive terminal mode
-    print("=== AtomLogic Parser Interactive Mode ===")
-    print("Type/paste your circuit code.")
-    print("Type 'END' on a new line or press Ctrl+D to parse.")
-    print("Flags: use --tree (-t) for tree view, or --both (-b) for both views.\n")
-
-    lines = []
-    try:
-        while True:
-            line = input()
-            if line.strip() == "END":
-                break
-            lines.append(line)
-    except EOFError:
-        pass
-
-    user_code = "\n".join(lines).strip()
-
-    print("\n--- Parsing Result ---")
-    ast = parser.parse(user_code, lexer=lexer)
-    display_ast(ast)
-
-if __name__ == "__main__":
-    main()

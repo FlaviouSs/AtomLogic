@@ -28,10 +28,8 @@ Validations:
    - Computes sequential gate evaluation order for the simulation backend.
 """
 
-import sys
 from enum import Enum
 from dataclasses import dataclass, field
-from pprint import pprint
 
 
 class SemanticError(Exception):
@@ -329,54 +327,3 @@ def analyze_circuit(ast: tuple) -> ValidatedCircuit:
     """Convenience helper function to run semantic analysis on an AST."""
     analyzer = SemanticAnalyzer()
     return analyzer.analyze(ast)
-
-
-def main():
-    import lexical
-    import parser as parser_module
-    import ply.lex as lex
-    import ply.yacc as yacc
-
-    if len(sys.argv) < 2:
-        print("Usage: python semantic.py <circuit_file.atom>")
-        sys.exit(1)
-
-    filepath = sys.argv[1]
-    try:
-        with open(filepath, "r") as f:
-            code = f.read()
-    except FileNotFoundError:
-        print(f"Error: File '{filepath}' not found.")
-        sys.exit(1)
-
-    lexer = lex.lex(module=lexical)
-    parser = yacc.yacc(module=parser_module)
-
-    print(f"Parsing '{filepath}'...")
-    ast = parser.parse(code, lexer=lexer)
-    if not ast:
-        print("Parsing failed with syntax errors.")
-        sys.exit(1)
-
-    print("\nRunning Semantic Analysis...")
-    try:
-        validated = analyze_circuit(ast)
-        print("\n✅ Semantic Analysis PASSED!")
-        print("=" * 45)
-        print(f"Circuit Name : {validated.name}")
-        print(f"Inputs ({len(validated.inputs)})    : {validated.inputs}")
-        print(f"Outputs ({len(validated.outputs)})   : {validated.outputs}")
-        print(f"Wires ({len(validated.wires)})     : {validated.wires}")
-        print(f"Total Gates  : {len(validated.gates)}")
-        print("\nTopological Evaluation Order (Execution Plan):")
-        for i, gate in enumerate(validated.topological_gates, 1):
-            operands_str = ", ".join(gate.operands)
-            print(f"  {i}. {gate.target} = {gate.gate_type}({operands_str})")
-        print("=" * 45)
-    except SemanticError as e:
-        print(f"\n❌ SEMANTIC ERROR: {e}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

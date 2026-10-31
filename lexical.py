@@ -75,27 +75,3 @@ def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
 
-def main(lex_object):
-
-    lexer = lex_object
-
-    while True:
-        print("\nTokens scanner\t\t(Type 'exit' to stop!)")
-        try:
-            s = str(input("Type in your sentence -> "))
-        except EOFError:
-            break
-
-        if s.strip() == "exit":
-            break
-
-        lexer.input(s)
-
-        for tok in lexer:
-            print(tok)
-
-if __name__ == "__main__":
-
-    lexer = lex.lex()
-
-    main(lexer)
