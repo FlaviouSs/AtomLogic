@@ -17,6 +17,8 @@ Options:
     --tree, -t     Display the Abstract Syntax Tree (AST) visual tree.
     --ast,  -a     Display the raw AST tuples.
     --verbose, -v  Display detailed step-by-step pipeline output.
+    --debug, -d    Enable parser debug mode (generates parser.out and parsetab.py).
+    --help, -h     Display this help message.
     (no args)      Enter interactive terminal mode.
 """
 
@@ -26,18 +28,22 @@ from pprint import pprint
 import ply.lex as lex
 import ply.yacc as yacc
 
-import lexical
-import parser as parser_module
-import semantic
-from semantic import ValidatedCircuit, SemanticError
+from src import lexical
+from src import parser as parser_module
+from src import semantic
+from src.semantic import ValidatedCircuit, SemanticError
 
 
 class AtomLogicCompiler:
     """Unified driver managing the compiler pipeline stages."""
 
-    def __init__(self):
+    def __init__(self, debug: bool = False, write_tables: bool = False):
         self.lexer = lex.lex(module=lexical)
-        self.parser = yacc.yacc(module=parser_module, write_tables=False)
+        self.parser = yacc.yacc(
+            module=parser_module,
+            write_tables=write_tables,
+            debug=debug,
+        )
 
     def compile_source(
         self,
@@ -54,7 +60,7 @@ class AtomLogicCompiler:
         """
         if verbose:
             print("\n" + "=" * 50)
-            print("🚀 AtomLogic Compilation Pipeline Initiated")
+            print("AtomLogic Compilation Pipeline Initiated")
             print("=" * 50)
 
         # ---------------------------------------------------------
@@ -68,13 +74,13 @@ class AtomLogicCompiler:
 
         # Check for empty input
         if not source_code.strip():
-            print("❌ Compilation Error: Source code is empty.")
+            print("Compilation Error: Source code is empty.")
             return None
 
         ast = self.parser.parse(source_code, lexer=self.lexer)
         if not ast:
             # Syntax errors are reported by p_error in parser.py
-            print("❌ Compilation Error: Syntactic analysis failed.")
+            print("Compilation Error: Syntactic analysis failed.")
             return None
 
         if verbose:
@@ -97,7 +103,7 @@ class AtomLogicCompiler:
         try:
             circuit = semantic.analyze_circuit(ast)
         except SemanticError as err:
-            print(f"\n❌ Semantic Error: {err}")
+            print(f"\nSemantic Error: {err}")
             return None
 
         if verbose:
@@ -110,7 +116,7 @@ class AtomLogicCompiler:
         # Stage 4: Compilation Summary
         # ---------------------------------------------------------
         print("\n" + "=" * 50)
-        print(f"✅ Compilation Successful: Circuit '{circuit.name}'")
+        print(f"Compilation Successful: Circuit '{circuit.name}'")
         print("=" * 50)
         print(f"  • Inputs  ({len(circuit.inputs)}): {', '.join(circuit.inputs)}")
         print(f"  • Outputs ({len(circuit.outputs)}): {', '.join(circuit.outputs)}")
@@ -118,7 +124,7 @@ class AtomLogicCompiler:
             print(f"  • Wires   ({len(circuit.wires)}): {', '.join(circuit.wires)}")
         print(f"  • Total Logic Gates: {len(circuit.gates)}")
 
-        print("\n📋 Execution Plan (Topological Order):")
+        print("\nExecution Plan (Topological Order):")
         for idx, gate in enumerate(circuit.topological_gates, 1):
             args_str = ", ".join(gate.operands)
             print(f"  {idx}. {gate.target} = {gate.gate_type}({args_str})")
@@ -157,15 +163,20 @@ def run_interactive(compiler: AtomLogicCompiler, show_tree: bool, show_ast: bool
 
 
 def main():
-    compiler = AtomLogicCompiler()
-
     # Parse CLI flags
     flags = [arg for arg in sys.argv[1:] if arg.startswith("-")]
     files = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
+    if "--help" in flags or "-h" in flags:
+        print(__doc__)
+        return
+
     show_tree = "--tree" in flags or "-t" in flags
     show_ast = "--ast" in flags or "-a" in flags
     verbose = "--verbose" in flags or "-v" in flags
+    debug_mode = "--debug" in flags or "-d" in flags
+
+    compiler = AtomLogicCompiler(debug=debug_mode, write_tables=debug_mode)
 
     # Mode 1: Compile file provided in arguments
     if files:
@@ -174,7 +185,7 @@ def main():
             with open(filepath, "r") as f:
                 source_code = f.read()
         except FileNotFoundError:
-            print(f"❌ Error: File '{filepath}' not found.")
+            print(f"Error: File '{filepath}' not found.")
             sys.exit(1)
 
         print(f"Compiling '{filepath}'...")

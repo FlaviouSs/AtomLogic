@@ -1,7 +1,7 @@
 import ply.lex as lex
 import ply.yacc as yacc
-import lexical
-from lexical import tokens
+from src import lexical
+from src.lexical import tokens
 
 
 def p_circuit(p):
