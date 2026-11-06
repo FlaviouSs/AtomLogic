@@ -33,6 +33,16 @@ from src import parser as parser_module
 from src import semantic
 from src.semantic import ValidatedCircuit, SemanticError
 
+BANNER = r"""
+    ___   __                  __              _     
+   /   | / /_____  ____ ___  / /   ____  ____(_)____
+  / /| |/ __/ __ \/ __ `__ \/ /   / __ \/ __ `/ / ___/
+ / ___ / /_/ /_/ / / / / / / /___/ /_/ / /_/ / / /__  
+/_/  |_\__/\____/_/ /_/ /_/_____/\____/\__, /_/\___/  
+                                      /____/          
+            Digital Circuit DSL & Compiler
+"""
+
 
 class AtomLogicCompiler:
     """Unified driver managing the compiler pipeline stages."""
@@ -59,7 +69,8 @@ class AtomLogicCompiler:
         Stage 3: Semantic Analysis & Graph/Cycle Validation
         """
         if verbose:
-            print("\n" + "=" * 50)
+            print(BANNER)
+            print("=" * 50)
             print("AtomLogic Compilation Pipeline Initiated")
             print("=" * 50)
 
@@ -135,6 +146,7 @@ class AtomLogicCompiler:
 
 def run_interactive(compiler: AtomLogicCompiler, show_tree: bool, show_ast: bool):
     """Runs interactive REPL terminal mode."""
+    print(BANNER)
     print("=== AtomLogic Compiler — Interactive Mode ===")
     print("Type or paste your circuit definition.")
     print("Type 'END' on a new line or press Ctrl+D to compile.\n")
@@ -168,6 +180,7 @@ def main():
     files = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
 
     if "--help" in flags or "-h" in flags:
+        print(BANNER)
         print(__doc__)
         return
 
