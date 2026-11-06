@@ -1,0 +1,9 @@
+// Error Example: Lexical Error
+// Cause: Uses illegal character '&' instead of standard DSL gate syntax AND(A, B).
+
+CIRCUIT LexicalOperatorError {
+    INPUT A, B;
+    OUTPUT Out;
+
+    Out = A & B;
+}

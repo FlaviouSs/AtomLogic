@@ -1,0 +1,9 @@
+// Error Example: Lexical Error
+// Cause: Contains illegal characters '@' and '$' not defined in the lexer.
+
+CIRCUIT LexicalErrorTest {
+    INPUT A, @B;
+    OUTPUT $Out;
+
+    Out = AND(A, B);
+}

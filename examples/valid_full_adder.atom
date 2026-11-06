@@ -1,0 +1,22 @@
+// Valid Circuit: 1-Bit Full Adder
+// Built purely with primitive gates: AND, OR, NOT.
+
+CIRCUIT FullAdder {
+    INPUT A, B, Cin;
+    OUTPUT Sum, Cout;
+
+    // Stage 1: Half Adder (A XOR B and A AND B)
+    ab_and = AND(A, B);
+    ab_or = OR(A, B);
+    not_ab_and = NOT(ab_and);
+    s1 = AND(ab_or, not_ab_and);
+
+    // Stage 2: Half Adder (s1 XOR Cin and s1 AND Cin)
+    s1_cin_and = AND(s1, Cin);
+    s1_cin_or = OR(s1, Cin);
+    not_s1_cin_and = NOT(s1_cin_and);
+    Sum = AND(s1_cin_or, not_s1_cin_and);
+
+    // Stage 3: Carry Out
+    Cout = OR(ab_and, s1_cin_and);
+}

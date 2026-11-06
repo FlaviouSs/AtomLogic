@@ -1,0 +1,9 @@
+// Error Example: Semantic Error
+// Cause: Output 'Sum' was declared in the header but is never driven by any gate.
+
+CIRCUIT SemanticUndrivenOutput {
+    INPUT A, B;
+    OUTPUT Sum, Carry;
+
+    Carry = AND(A, B);
+}

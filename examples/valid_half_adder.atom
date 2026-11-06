@@ -1,0 +1,12 @@
+// Valid Circuit: Half Adder
+// Synthesizes XOR using basic gates: AND, OR, NOT.
+
+CIRCUIT HalfAdder {
+    INPUT A, B;
+    OUTPUT Sum, Carry;
+
+    Carry = AND(A, B);
+    or_ab = OR(A, B);
+    not_carry = NOT(Carry);
+    Sum = AND(or_ab, not_carry);
+}

@@ -1,0 +1,12 @@
+// Error Example: Semantic Error
+// Cause: Feedback loop / cycle detected between signals 'x' and 'y'.
+// Combinational circuits must be Directed Acyclic Graphs (DAGs).
+
+CIRCUIT SemanticFeedbackLoop {
+    INPUT A, B;
+    OUTPUT Out;
+
+    x = AND(A, y);
+    y = OR(B, x);
+    Out = NOT(x);
+}

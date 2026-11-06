@@ -1,0 +1,12 @@
+// Valid Circuit: 2-to-1 Multiplexer (MUX)
+// Selects between input A (when Sel=0) and input B (when Sel=1).
+
+CIRCUIT Multiplexer2to1 {
+    INPUT A, B, Sel;
+    OUTPUT Out;
+
+    not_sel = NOT(Sel);
+    a_selected = AND(A, not_sel);
+    b_selected = AND(B, Sel);
+    Out = OR(a_selected, b_selected);
+}

@@ -1,0 +1,9 @@
+// Error Example: Semantic Error
+// Cause: Signal 'A' is declared both as INPUT and as OUTPUT.
+
+CIRCUIT SemanticDuplicateSignal {
+    INPUT A, B;
+    OUTPUT A, Out;
+
+    Out = AND(A, B);
+}

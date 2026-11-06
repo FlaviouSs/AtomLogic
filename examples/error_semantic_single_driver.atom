@@ -1,0 +1,11 @@
+// Error Example: Semantic Error
+// Cause: Signal 'w1' violates the Single-Driver rule by being driven by multiple gates.
+
+CIRCUIT SemanticSingleDriver {
+    INPUT A, B, C;
+    OUTPUT Out;
+
+    w1 = AND(A, B);
+    w1 = OR(B, C);
+    Out = NOT(w1);
+}

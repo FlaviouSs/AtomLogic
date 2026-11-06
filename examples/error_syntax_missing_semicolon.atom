@@ -1,0 +1,9 @@
+// Error Example: Syntactic Error
+// Cause: Missing semicolon ';' after the INPUT declaration.
+
+CIRCUIT SyntaxMissingSemicolon {
+    INPUT A, B
+    OUTPUT Out;
+
+    Out = AND(A, B);
+}

@@ -1,0 +1,9 @@
+// Error Example: Semantic Error
+// Cause: Signal 'C' is used as an operand in the AND gate, but was never declared.
+
+CIRCUIT SemanticUndeclaredSignal {
+    INPUT A, B;
+    OUTPUT Out;
+
+    Out = AND(A, C);
+}

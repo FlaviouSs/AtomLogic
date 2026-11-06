@@ -1,0 +1,9 @@
+// Error Example: Syntactic Error
+// Cause: Malformed gate invocation (missing closing parenthesis in gate expression).
+
+CIRCUIT SyntaxMalformedGate {
+    INPUT A, B;
+    OUTPUT Out;
+
+    Out = AND(A, B;
+}

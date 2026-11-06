@@ -43,12 +43,18 @@ AtomLogic implements the classical compiler frontend architecture using **Python
 AtomLogic/
 ├── docs/
 │   └── PROJECT_SPECIFICATION.md   # Architectural breakdown and design notes
+├── examples/                      # Catalog of reference circuits and error test cases
+│   ├── README.md                  # Detailed test case guide and error catalog
+│   ├── valid_*.atom               # Valid circuits (Half Adder, Full Adder, MUX)
+│   ├── error_lexical_*.atom       # Lexical scanner error examples
+│   ├── error_syntax_*.atom        # Syntactic grammar error examples
+│   └── error_semantic_*.atom      # Electrical and graph validation error examples
 ├── src/
 │   ├── __init__.py                # Source package entry
 │   ├── lexical.py                 # Lexer (ply.lex)
 │   ├── parser.py                  # LALR(1) parser & AST visualizer (ply.yacc)
 │   └── semantic.py                # Semantic analyzer & electrical DAG validator
-├── circuit.atom                   # Reference Half Adder circuit definition
+├── circuit.atom                   # Canonical Half Adder circuit definition
 ├── main.py                        # Centralized compiler CLI driver
 ├── requirements.txt               # Project dependencies
 └── README.md
@@ -121,6 +127,32 @@ CIRCUIT HalfAdder {
     Sum = AND(or_ab, not_carry);
 }
 ```
+
+---
+
+## Example Circuits & Error Catalog
+
+The [`examples/`](examples/) folder provides reference circuits and intentional negative test cases demonstrating every compiler error:
+
+* **Valid Circuits:**
+  * [`valid_half_adder.atom`](examples/valid_half_adder.atom): Canonical Half Adder (4 gates).
+  * [`valid_full_adder.atom`](examples/valid_full_adder.atom): 1-bit Full Adder with carry-in and carry-out (9 gates).
+  * [`valid_multiplexer.atom`](examples/valid_multiplexer.atom): 2-to-1 Multiplexer (4 gates).
+* **Lexical Errors:**
+  * [`error_lexical_invalid_char.atom`](examples/error_lexical_invalid_char.atom): Illegal characters (`@`, `$`).
+  * [`error_lexical_unsupported_operator.atom`](examples/error_lexical_unsupported_operator.atom): Unsupported operators (`&`).
+* **Syntactic Errors:**
+  * [`error_syntax_missing_semicolon.atom`](examples/error_syntax_missing_semicolon.atom): Omitted statement delimiter (`;`).
+  * [`error_syntax_malformed_gate.atom`](examples/error_syntax_malformed_gate.atom): Unclosed parenthesis in gate expression.
+  * [`error_syntax_missing_brace.atom`](examples/error_syntax_missing_brace.atom): Premature EOF / unclosed block (`}`).
+* **Semantic Errors:**
+  * [`error_semantic_undeclared_signal.atom`](examples/error_semantic_undeclared_signal.atom): Undeclared operand signal.
+  * [`error_semantic_duplicate_signal.atom`](examples/error_semantic_duplicate_signal.atom): Duplicate signal declarations.
+  * [`error_semantic_single_driver.atom`](examples/error_semantic_single_driver.atom): Multi-driver wire contention.
+  * [`error_semantic_cycle.atom`](examples/error_semantic_cycle.atom): Combinational feedback loop (cycle detection).
+  * [`error_semantic_undriven_output.atom`](examples/error_semantic_undriven_output.atom): Undriven output port.
+
+See [`examples/README.md`](examples/README.md) for full descriptions and terminal output traces.
 
 ---
 

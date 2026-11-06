@@ -1,0 +1,8 @@
+// Error Example: Syntactic Error
+// Cause: Missing closing brace '}' at end of file (EOF).
+
+CIRCUIT SyntaxMissingBrace {
+    INPUT A, B;
+    OUTPUT Out;
+
+    Out = AND(A, B);
