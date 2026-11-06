@@ -1,31 +1,22 @@
 """
-AtomLogic Semantic Analyzer
-===========================
+AtomLogic Semantic Analyzer / Analisador Semântico
+==================================================
 
-Purpose:
---------
-Performs semantic analysis and electrical graph validation on the Abstract
-Syntax Tree (AST) produced by the parser.
+Validates and prevents the following circuit errors:
+1. Duplicate/Missing declarations (redefined signals or missing INPUT/OUTPUT).
+2. Gate arity violations (wrong operand count for NOT, AND, OR).
+3. Driver contention (driving an INPUT or multiple drivers on a single wire).
+4. Floating signals (undeclared operands or undriven outputs).
+5. Combinational feedback loops (cycles detected via DFS).
+6. Execution ordering (resolves topological gate order for simulation).
 
-Validations:
-------------
-1. Symbol Table Management:
-   - Registers INPUT, OUTPUT, and internal WIRE signals.
-   - Detects duplicate signal declarations (e.g. INPUT A; OUTPUT A;).
-2. Scope & Existence:
-   - Ensures all gate input operands are declared inputs or driven by a gate.
-   - Rejects undeclared / floating signals.
-3. Electrical Rules:
-   - Enforces Single-Driver rule (wires and outputs can only be driven once).
-   - Protects input signals from being driven (cannot assign to an INPUT).
-   - Validates gate arity (NOT requires 1 input; AND/OR require 2 inputs).
-   - Checks for undriven outputs.
-4. Dependency Graph & Cycle Detection:
-   - Models circuit signal dependencies as a Directed Graph.
-   - Verifies the circuit is a Directed Acyclic Graph (DAG) for combinational logic.
-   - Reports exact feedback loop paths when cycles are discovered.
-5. Topological Execution Ordering:
-   - Computes sequential gate evaluation order for the simulation backend.
+Validações e erros de circuito tratados:
+1. Sinais duplicados ou ausentes (sem INPUT/OUTPUT ou nomes repetidos).
+2. Aridade incorreta (número errado de operandos nas portas).
+3. Conflito elétrico (tentativa de acionar INPUT ou múltiplos drivers no mesmo fio).
+4. Fios soltos / flutuantes (operandos não declarados ou saídas sem conexão).
+5. Ciclos no circuito (loops de realimentação em lógica combinacional).
+6. Ordem de cálculo (portas ordenadas topologicamente para simulação).
 """
 
 from enum import Enum
