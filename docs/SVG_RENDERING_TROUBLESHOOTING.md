@@ -59,12 +59,12 @@ Rather than relying on viewer-dependent CSS engines, a post-processing normaliza
 
 The post-processor parses the raw SVG DOM using Python's `xml.etree.ElementTree` and injects **explicit inline XML presentation attributes** directly onto every node:
 
-### 3.1 Solid Background Canvas
-Injects a full-canvas background rectangle at the top of the SVG DOM:
+### 3.1 Solid Background Canvas & ViewBox Normalization
+Injects an explicit `viewBox="0 0 {width} {height}"` on the root `<svg>` element and inserts a background rectangle with exact numeric dimensions:
 ```xml
-<rect width="100%" height="100%" fill="#ffffff" stroke="none" />
+<rect x="0" y="0" width="{width}" height="{height}" fill="#ffffff" stroke="none" />
 ```
-This guarantees an opaque white background regardless of whether the operating system or application is configured for Dark Mode or Light Mode.
+*Note: Using percentage dimensions (`width="100%" height="100%"`) causes QtSvg (SVG 1.2 Tiny) to resolve against a default 200px viewport, leaving wider diagrams clipped on dark backgrounds. Setting explicit numeric dimensions matching the SVG viewBox ensures 100% canvas coverage.*
 
 ### 3.2 Explicit Attribute Injection per Element Type
 

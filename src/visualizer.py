@@ -181,25 +181,45 @@ def _postprocess_svg(svg_path: str, bg_color: str = "#ffffff") -> None:
         def get_local_tag(elem):
             return elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
 
-        # Check if background rect already exists
-        has_bg_rect = False
+        # Ensure root has explicit viewBox and numeric dimensions
+        raw_width = root.get("width", "")
+        raw_height = root.get("height", "")
+
+        try:
+            w_val = float(raw_width.replace("px", ""))
+            h_val = float(raw_height.replace("px", ""))
+        except (ValueError, AttributeError):
+            w_val = 0.0
+            h_val = 0.0
+
+        if w_val > 0 and h_val > 0:
+            if not root.get("viewBox"):
+                root.set("viewBox", f"0 0 {w_val} {h_val}")
+            rect_w = str(w_val)
+            rect_h = str(h_val)
+        else:
+            rect_w = raw_width if raw_width else "100%"
+            rect_h = raw_height if raw_height else "100%"
+
+        # Remove any pre-existing background rect to avoid duplicates
         for child in list(root):
             tag = get_local_tag(child)
-            if tag == "rect" and child.get("width") == "100%" and child.get("height") == "100%":
-                has_bg_rect = True
-                break
+            if tag == "rect" and (child.get("id") == "atomlogic-bg" or child.get("fill") == bg_color):
+                root.remove(child)
 
-        if not has_bg_rect:
-            bg_rect = ET.Element(
-                "rect",
-                {
-                    "width": "100%",
-                    "height": "100%",
-                    "fill": bg_color,
-                    "stroke": "none",
-                },
-            )
-            root.insert(0, bg_rect)
+        bg_rect = ET.Element(
+            "rect",
+            {
+                "id": "atomlogic-bg",
+                "x": "0",
+                "y": "0",
+                "width": rect_w,
+                "height": rect_h,
+                "fill": bg_color,
+                "stroke": "none",
+            },
+        )
+        root.insert(0, bg_rect)
 
         for elem in root.iter():
             tag = get_local_tag(elem)
@@ -251,8 +271,17 @@ def _postprocess_svg(svg_path: str, bg_color: str = "#ffffff") -> None:
 
     except Exception:
         # Fallback to text replacement if XML parsing encounters unexpected formatting
+        import re
         with open(svg_path, "r", encoding="utf-8") as f:
             content = f.read()
+
+        w_match = re.search(r'width=["\']([0-9.]+)px?["\']', content)
+        h_match = re.search(r'height=["\']([0-9.]+)px?["\']', content)
+        fb_w = w_match.group(1) if w_match else "100%"
+        fb_h = h_match.group(1) if h_match else "100%"
+
+        if w_match and h_match and "viewBox" not in content:
+            content = content.replace("<svg ", f'<svg viewBox="0 0 {fb_w} {fb_h}" ', 1)
 
         if "<style>svg {" in content:
             content = content.replace(
@@ -260,8 +289,8 @@ def _postprocess_svg(svg_path: str, bg_color: str = "#ffffff") -> None:
                 f"<style>svg {{\n    background-color: {bg_color};",
                 1,
             )
-        bg_rect_str = f'  <rect width="100%" height="100%" fill="{bg_color}" stroke="none"/>\n'
-        if "</style>" in content and bg_rect_str.strip() not in content:
+        bg_rect_str = f'  <rect id="atomlogic-bg" x="0" y="0" width="{fb_w}" height="{fb_h}" fill="{bg_color}" stroke="none"/>\n'
+        if "</style>" in content and "atomlogic-bg" not in content:
             content = content.replace("</style>", f"</style>\n{bg_rect_str}", 1)
 
         with open(svg_path, "w", encoding="utf-8") as f:

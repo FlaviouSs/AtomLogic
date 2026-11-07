@@ -10,30 +10,32 @@
             Digital Circuit DSL & Compiler
 ```
 
-**AtomLogic** is a declarative Domain-Specific Language (DSL) and compiler toolchain for modeling, validating, and simulating digital combinational logic circuits.
+**AtomLogic** is a declarative Domain-Specific Language (DSL) and compiler toolchain for modeling, validating, and visualizing digital combinational logic circuits.
 
-Instead of drawing schematics manually in graphical software, engineers and students define circuit inputs, outputs, intermediate signals, and logic gates textually in `.atom` source files. The compiler analyzes the syntax, validates electrical rules, enforces Directed Acyclic Graph (DAG) acyclicity, and produces a validated intermediate representation ready for simulation.
+Instead of drawing schematics manually in graphical software, engineers and students define circuit inputs, outputs, intermediate signals, and logic gates textually in `.atom` source files. The compiler parses the syntax, validates electrical rules and Directed Acyclic Graph (DAG) acyclicity, and automatically generates IEEE-standard vector schematic diagrams using **netlistsvg**.
 
 ---
 
 ## Compiler Pipeline
 
-AtomLogic implements the classical compiler frontend architecture using **Python 3.10+** and **PLY (Python Lex-Yacc)**:
+AtomLogic implements a modular compiler architecture using **Python 3.10+**, **PLY (Python Lex-Yacc)**, and **netlistsvg**:
 
 1. **Lexical Analysis (`src/lexical.py` - `ply.lex`):**
-   - Scans and tokenizes keywords (`CIRCUIT`, `INPUT`, `OUTPUT`), logic primitives (`AND`, `OR`, `NOT`), identifiers, delimiters, and assignment operators.
-   - Discards single-line comments (`//.*`) and tracks line coordinates for precise diagnostics.
+   - Scans and tokenizes keywords (`CIRCUIT`, `INPUT`, `OUTPUT`), logic primitives (`AND`, `OR`, `NOT`), identifiers, and operators.
+   - Discards single-line comments (`//.*`) and tracks line coordinates for error diagnostics.
 
 2. **Syntactic Analysis (`src/parser.py` - `ply.yacc`):**
-   - Parses the token stream using an unambiguous **LALR(1)** shift-reduce engine with **0 conflicts**.
-   - Constructs a structured Abstract Syntax Tree (AST) with an optional box-drawing visual tree renderer.
+   - Parses tokens using an unambiguous **LALR(1)** grammar (0 shift/reduce conflicts).
+   - Builds an Abstract Syntax Tree (AST) with optional hierarchical box-drawing visualization.
 
-3. **Semantic Analysis & Electrical Graph Validation (`src/semantic.py`):**
-   - **Symbol Table:** Tracks scopes for `INPUT`, `OUTPUT`, and internal `WIRE` signals; catches duplicate declarations.
-   - **Electrical Rules:** Enforces gate arities (unary `NOT`, binary `AND`/`OR`) and the **Single-Driver Rule** (wires and outputs can only be driven once; inputs cannot be driven).
-   - **Signal Integrity:** Prevents floating/undeclared signals and ensures all declared outputs are driven.
-   - **Graph Theory & Cycle Detection:** Models signal flow as a directed graph and runs 3-state Depth-First Search (DFS) to reject combinational feedback loops.
-   - **Topological Sorting:** Computes sequential evaluation order for downstream backends.
+3. **Semantic Analysis & DAG Validation (`src/semantic.py`):**
+   - Enforces symbol declarations, gate arities, and signal integrity (floating signals, undriven outputs).
+   - Validates the **Single-Driver Rule** and detects combinational feedback loops using 3-state DFS cycle detection.
+   - Computes topological evaluation order for downstream execution and visualization.
+
+4. **Schematic Visualization (`src/visualizer.py`):**
+   - Translates validated circuits into Yosys Netlist JSON.
+   - Invokes **netlistsvg** to render clean, publication-ready IEEE vector schematics with desktop SVG compatibility fixes.
 
 ---
 
@@ -42,22 +44,20 @@ AtomLogic implements the classical compiler frontend architecture using **Python
 ```text
 AtomLogic/
 ├── docs/
-│   └── PROJECT_SPECIFICATION.md   # Architectural breakdown and design notes
-├── examples/                      # Catalog of reference circuits and error test cases
-│   ├── README.md                  # Detailed test case guide and error catalog
-│   ├── valid_*.atom               # Valid circuits (Half Adder, Full Adder, MUX)
-│   ├── error_lexical_*.atom       # Lexical scanner error examples
-│   ├── error_syntax_*.atom        # Syntactic grammar error examples
-│   └── error_semantic_*.atom      # Electrical and graph validation error examples
+│   ├── NETLISTSVG_INTEGRATION.md        # Netlistsvg pipeline architecture & schema
+│   ├── PROJECT_SPECIFICATION.md         # Language specification and grammar rules
+│   └── SVG_RENDERING_TROUBLESHOOTING.md # QtSvg/Gwenview rendering fix documentation
+├── examples/                            # Catalog of reference circuits and error cases
+│   └── README.md                        # Test suite guide and terminal error traces
 ├── src/
-│   ├── __init__.py                # Source package entry
-│   ├── lexical.py                 # Lexer (ply.lex)
-│   ├── parser.py                  # LALR(1) parser & AST visualizer (ply.yacc)
-│   ├── semantic.py                # Semantic analyzer & electrical DAG validator
-│   └── visualizer.py              # Netlistsvg vector schematic generator
-├── circuit.atom                   # Canonical Half Adder circuit definition
-├── main.py                        # Centralized compiler CLI driver
-├── requirements.txt               # Project dependencies
+│   ├── __init__.py                      # Package entry point
+│   ├── lexical.py                       # Lexer (ply.lex)
+│   ├── parser.py                        # LALR(1) parser & AST visualizer (ply.yacc)
+│   ├── semantic.py                      # Semantic analyzer & electrical DAG validator
+│   └── visualizer.py                    # Netlistsvg vector schematic generator
+├── circuit.atom                         # Canonical Half Adder circuit definition
+├── main.py                              # Centralized compiler CLI driver
+├── requirements.txt                     # Python dependencies
 └── README.md
 ```
 
@@ -65,7 +65,7 @@ AtomLogic/
 
 ## Installation & Setup
 
-Requires **Python 3.10** or higher.
+Requires **Python 3.10+** and **Node.js** (for `netlistsvg` diagram rendering).
 
 ```bash
 # 1. Clone repository
@@ -135,27 +135,17 @@ CIRCUIT HalfAdder {
 
 ## Example Circuits & Error Catalog
 
-The [`examples/`](examples/) folder provides reference circuits and intentional negative test cases demonstrating every compiler error:
+The [`examples/`](examples/) directory contains a complete catalog of sample `.atom` files, covering both valid reference circuits (Half Adder, Full Adder, Multiplexer) and intentional test cases demonstrating every lexical, syntactic, and semantic compiler diagnostic.
 
-* **Valid Circuits:**
-  * [`valid_half_adder.atom`](examples/valid_half_adder.atom): Canonical Half Adder (4 gates).
-  * [`valid_full_adder.atom`](examples/valid_full_adder.atom): 1-bit Full Adder with carry-in and carry-out (9 gates).
-  * [`valid_multiplexer.atom`](examples/valid_multiplexer.atom): 2-to-1 Multiplexer (4 gates).
-* **Lexical Errors:**
-  * [`error_lexical_invalid_char.atom`](examples/error_lexical_invalid_char.atom): Illegal characters (`@`, `$`).
-  * [`error_lexical_unsupported_operator.atom`](examples/error_lexical_unsupported_operator.atom): Unsupported operators (`&`).
-* **Syntactic Errors:**
-  * [`error_syntax_missing_semicolon.atom`](examples/error_syntax_missing_semicolon.atom): Omitted statement delimiter (`;`).
-  * [`error_syntax_malformed_gate.atom`](examples/error_syntax_malformed_gate.atom): Unclosed parenthesis in gate expression.
-  * [`error_syntax_missing_brace.atom`](examples/error_syntax_missing_brace.atom): Premature EOF / unclosed block (`}`).
-* **Semantic Errors:**
-  * [`error_semantic_undeclared_signal.atom`](examples/error_semantic_undeclared_signal.atom): Undeclared operand signal.
-  * [`error_semantic_duplicate_signal.atom`](examples/error_semantic_duplicate_signal.atom): Duplicate signal declarations.
-  * [`error_semantic_single_driver.atom`](examples/error_semantic_single_driver.atom): Multi-driver wire contention.
-  * [`error_semantic_cycle.atom`](examples/error_semantic_cycle.atom): Combinational feedback loop (cycle detection).
-  * [`error_semantic_undriven_output.atom`](examples/error_semantic_undriven_output.atom): Undriven output port.
+For detailed descriptions of each example along with expected compiler output and error traces, see [`examples/README.md`](examples/README.md).
 
-See [`examples/README.md`](examples/README.md) for full descriptions and terminal output traces.
+---
+
+## Technical Documentation (`docs/`)
+
+The [`docs/`](docs/) directory preserves in-depth architectural specifications, design rationales, and engineering post-mortems encountered throughout the project.
+
+For example, during the integration of the schematic visualizer, desktop image viewers (such as KDE Gwenview / `QtSvg`) failed to inherit CSS styling, causing logic gates to render with solid black interiors and wires to disappear completely. Detailed investigations, root-cause analyses, and solutions to issues of this nature are documented in this folder.
 
 ---
 
