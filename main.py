@@ -17,6 +17,8 @@ Options:
     --tree, -t     Display the Abstract Syntax Tree (AST) visual tree.
     --ast,  -a     Display the raw AST tuples.
     --verbose, -v  Display detailed step-by-step pipeline output.
+    --svg, -s      Render circuit schematic diagram as SVG using netlistsvg.
+    --json         Export the Yosys Netlist JSON used for rendering.
     --debug, -d    Enable parser debug mode (generates parser.out and parsetab.py).
     --help, -h     Display this help message.
     (no args)      Enter interactive terminal mode.
@@ -24,6 +26,7 @@ Options:
 
 import sys
 import os
+from pathlib import Path
 from pprint import pprint
 import ply.lex as lex
 import ply.yacc as yacc
@@ -32,6 +35,8 @@ from src import lexical
 from src import parser as parser_module
 from src import semantic
 from src.semantic import ValidatedCircuit, SemanticError
+from src import visualizer
+from src.visualizer import VisualizationError
 
 BANNER = r"""
     ___   __                  __              _     
@@ -144,7 +149,47 @@ class AtomLogicCompiler:
         return circuit
 
 
-def run_interactive(compiler: AtomLogicCompiler, show_tree: bool, show_ast: bool):
+def handle_visualization(
+    circuit: ValidatedCircuit,
+    render_svg: bool,
+    export_json: bool,
+    input_filepath: str | None = None,
+):
+    """Generates SVG diagram and/or Netlist JSON if requested via CLI flags."""
+    if not (render_svg or export_json):
+        return
+
+    if input_filepath:
+        base_path = str(Path(input_filepath).with_suffix(""))
+    else:
+        base_path = circuit.name
+
+    svg_filename = f"{base_path}.svg"
+    json_filename = f"{base_path}.json" if export_json else None
+
+    try:
+        if render_svg:
+            visualizer.render_circuit_svg(circuit, svg_filename, json_filename)
+            print(f"Diagram rendered: {svg_filename}")
+            if export_json:
+                print(f"Netlist JSON saved: {json_filename}")
+        elif export_json:
+            import json
+            netlist_data = visualizer.circuit_to_yosys_json(circuit)
+            with open(json_filename, "w", encoding="utf-8") as f:
+                json.dump(netlist_data, f, indent=2)
+            print(f"Netlist JSON saved: {json_filename}")
+    except VisualizationError as err:
+        print(f"Visualization Warning: {err}")
+
+
+def run_interactive(
+    compiler: AtomLogicCompiler,
+    show_tree: bool,
+    show_ast: bool,
+    render_svg: bool = False,
+    export_json: bool = False,
+):
     """Runs interactive REPL terminal mode."""
     print(BANNER)
     print("=== AtomLogic Compiler — Interactive Mode ===")
@@ -166,12 +211,14 @@ def run_interactive(compiler: AtomLogicCompiler, show_tree: bool, show_ast: bool
         print("No input provided. Exiting.")
         return
 
-    compiler.compile_source(
+    result = compiler.compile_source(
         code,
         verbose=True,
         show_tree=show_tree,
         show_ast=show_ast,
     )
+    if result:
+        handle_visualization(result, render_svg=render_svg, export_json=export_json)
 
 
 def main():
@@ -188,6 +235,8 @@ def main():
     show_ast = "--ast" in flags or "-a" in flags
     verbose = "--verbose" in flags or "-v" in flags
     debug_mode = "--debug" in flags or "-d" in flags
+    render_svg = "--svg" in flags or "-s" in flags
+    export_json = "--json" in flags
 
     compiler = AtomLogicCompiler(debug=debug_mode, write_tables=debug_mode)
 
@@ -210,10 +259,23 @@ def main():
         )
         if not result:
             sys.exit(1)
+
+        handle_visualization(
+            result,
+            render_svg=render_svg,
+            export_json=export_json,
+            input_filepath=filepath,
+        )
         return
 
     # Mode 2: Interactive terminal mode
-    run_interactive(compiler, show_tree=show_tree, show_ast=show_ast)
+    run_interactive(
+        compiler,
+        show_tree=show_tree,
+        show_ast=show_ast,
+        render_svg=render_svg,
+        export_json=export_json,
+    )
 
 
 if __name__ == "__main__":
