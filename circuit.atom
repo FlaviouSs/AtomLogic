@@ -1,10 +1,9 @@
 CIRCUIT HalfAdder {
-    INPUT A, B;
-    OUTPUT Sum, Carry;
+    INPUT A, B, C, D;
+    OUTPUT S1;
 
-    Carry = AND(A, B);
-
-    or_ab = OR(A, B);
-    not_carry = NOT(Carry);
-    Sum = AND(or_ab, not_carry);
+    K = AND(A, B);
+    L = NOT(K);
+    J = AND(C, D);
+    S1 = AND(L, J);
 }

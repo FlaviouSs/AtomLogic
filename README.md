@@ -53,7 +53,8 @@ AtomLogic/
 │   ├── __init__.py                # Source package entry
 │   ├── lexical.py                 # Lexer (ply.lex)
 │   ├── parser.py                  # LALR(1) parser & AST visualizer (ply.yacc)
-│   └── semantic.py                # Semantic analyzer & electrical DAG validator
+│   ├── semantic.py                # Semantic analyzer & electrical DAG validator
+│   └── visualizer.py              # Netlistsvg vector schematic generator
 ├── circuit.atom                   # Canonical Half Adder circuit definition
 ├── main.py                        # Centralized compiler CLI driver
 ├── requirements.txt               # Project dependencies
@@ -95,6 +96,8 @@ python main.py circuit.atom
 | `--tree` | `-t` | Displays the hierarchical box-drawing AST visualization |
 | `--ast` | `-a` | Dumps the raw Python tuple AST representation |
 | `--verbose` | `-v` | Displays detailed step-by-step pipeline execution logs |
+| `--svg` | `-s` | Renders circuit schematic diagram as SVG using netlistsvg |
+| `--json` | | Exports the Yosys Netlist JSON used for rendering |
 | `--debug` | `-d` | Enables PLY debug mode, generating `src/parser.out` and `src/parsetab.py` |
 | `--help` | `-h` | Shows usage instructions and available options |
 
@@ -162,6 +165,6 @@ See [`examples/README.md`](examples/README.md) for full descriptions and termina
 - [x] Lexical Analyzer (`lex`)
 - [x] LALR(1) Parser & AST Generation (`yacc`)
 - [x] Semantic Analyzer, Electrical Validation, & DAG Cycle Detection
+- [x] Diagram Visualizer (netlistsvg IEEE vector schematics)
 - [ ] Exhaustive Truth Table Generator ($2^N$ input combinations)
-- [ ] Diagram Visualizer (Graphviz DOT & SchemDraw logic schematics)
 - [ ] Standalone Python Simulation Code Generator
