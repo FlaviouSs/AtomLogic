@@ -117,9 +117,10 @@ To ensure intermediate wire labels (such as `or_ab` or `not_carry`) appear rende
 The public interface for visualization is `render_circuit_svg(circuit, output_svg_path, output_json_path)`:
 
 1. **Netlist Generation:** Translates `ValidatedCircuit` into the in-memory dictionary and writes it to a `.json` file.
-2. **Tool Discovery:**
+2. **Tool Discovery & Cross-Platform Execution:**
    - Checks if `netlistsvg` is installed globally in the system `PATH` (`shutil.which("netlistsvg")`).
-   - If absent, invokes Node's package runner: `npx --yes netlistsvg <input.json> -o <output.svg>`.
+   - If absent, falls back to Node's package runner: `npx --yes netlistsvg <input.json> -o <output.svg>`.
+   - On Windows, resolves executable batch scripts (`.cmd`) and runs subprocesses with `shell=True` to prevent `_winapi.CreateProcess` WinError 2 exceptions.
 3. **Attribute Normalization:** Post-processes the raw SVG to ensure desktop renderer compatibility across operating systems and dark-mode themes (see `SVG_RENDERING_TROUBLESHOOTING.md`).
 4. **Cleanup:** Removes the intermediate `.json` file automatically unless the user explicitly requested it via `--json`.
 
