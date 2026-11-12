@@ -67,18 +67,32 @@ AtomLogic/
 
 Requires **Python 3.10+** and **Node.js** (for `netlistsvg` diagram rendering).
 
+### 1. Python Environment Setup
 ```bash
-# 1. Clone repository
+# Clone repository
 git clone https://github.com/flaviouss/AtomLogic.git
 cd AtomLogic
 
-# 2. Create and activate virtual environment
+# Create and activate virtual environment
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# 3. Install dependencies
+# Install compiler dependencies
 pip install -r requirements.txt
 ```
+
+### 2. Netlistsvg Installation (Schematic Visualizer)
+
+You have two options for running `netlistsvg`:
+
+* **Automatic on-demand execution (zero-install):**
+  If Node.js is installed on your system, AtomLogic will automatically run `netlistsvg` on the fly using `npx`. No local `node_modules` directory or `package.json` file is needed.
+
+* **Global installation (recommended for faster rendering):**
+  Install `netlistsvg` globally to avoid on-demand npx overhead:
+  ```bash
+  npm install -g netlistsvg
+  ```
 
 ---
 

@@ -8,6 +8,7 @@ and renders an IEEE-standard vector schematic using 'netlistsvg'.
 
 import json
 import os
+import sys
 import shutil
 import subprocess
 from pathlib import Path
@@ -117,20 +118,30 @@ def render_circuit_svg(
             json.dump(netlist_data, f, indent=2)
 
         # 3. Locate netlistsvg executable or use npx
-        if shutil.which("netlistsvg"):
-            cmd = ["netlistsvg", json_path, "-o", output_svg_path]
-        elif shutil.which("npx"):
-            cmd = ["npx", "--yes", "netlistsvg", json_path, "-o", output_svg_path]
+        is_windows = sys.platform.startswith("win")
+        netlistsvg_exe = shutil.which("netlistsvg")
+        npx_exe = shutil.which("npx")
+
+        if netlistsvg_exe:
+            cmd = [netlistsvg_exe, json_path, "-o", output_svg_path]
+        elif npx_exe:
+            cmd = [npx_exe, "--yes", "netlistsvg", json_path, "-o", output_svg_path]
         else:
             raise VisualizationError(
                 "Neither 'netlistsvg' nor 'npx' was found in PATH. "
                 "Please install Node.js and netlistsvg to generate SVG schematics."
             )
 
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            shell=is_windows,
+        )
         if result.returncode != 0:
+            error_detail = (result.stderr or result.stdout or "").strip()
             raise VisualizationError(
-                f"netlistsvg failed with return code {result.returncode}:\n{result.stderr.strip()}"
+                f"netlistsvg failed with return code {result.returncode}:\n{error_detail}"
             )
 
         # 4. Post-process SVG for universal rendering (fixes QtSvg/Gwenview and dark themes)
