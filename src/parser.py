@@ -1,15 +1,29 @@
+"""
+AtomLogic Syntactic Analyzer (Parser)
+=====================================
+
+[MODIFICAÇÃO - ANÁLISE SINTÁTICA]
+Define a gramática livre de contexto (CFG) LALR(1) da DSL AtomLogic usando PLY (ply.yacc),
+substituindo as produções de expressões aritméticas do exemplo padrão por declarações
+de circuitos digitais, portas lógicas e ações semânticas que constroem a AST.
+"""
+
 import ply.lex as lex
 import ply.yacc as yacc
 from src import lexical
 from src.lexical import tokens
 
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Produção inicial: reconhece o bloco CIRCUIT <nome> { <comandos> } e gera o nó raiz da AST.
 def p_circuit(p):
     '''
     circuit : CIRCUIT ID LBRACE statement_list RBRACE
     '''
     p[0] = ('circuit', p[2], p[4])
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Recursão à esquerda para acumular a lista de comandos do circuito.
 def p_statement_list(p):
     '''
     statement_list : statement_list statement
@@ -20,6 +34,8 @@ def p_statement_list(p):
     else:
         p[0] = [p[1]]
 
+# [MODIFICAÇÃO - GRAMÁTICA]
+# Produção de comando: declaração de entrada, declaração de saída ou atribuição de porta lógica.
 def p_statement(p):
     '''
     statement : input_decl
@@ -28,18 +44,24 @@ def p_statement(p):
     '''
     p[0] = p[1]
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Declaração de sinais de entrada: INPUT id1, id2, ...;
 def p_input_decl(p):
     '''
     input_decl : INPUT id_list SEMICOLON
     '''
     p[0] = ('inputs', p[2])
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Declaração de sinais de saída: OUTPUT id1, id2, ...;
 def p_output_decl(p):
     '''
     output_decl : OUTPUT id_list SEMICOLON
     '''
     p[0] = ('outputs', p[2])
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Lista de identificadores separados por vírgula.
 def p_id_list(p):
     '''
     id_list : id_list COMMA ID
@@ -50,18 +72,24 @@ def p_id_list(p):
     else:
         p[0] = [p[1]]
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Atribuição de saída de porta lógica a um fio/saída: sinal = GATE(...);
 def p_assign_stmt(p):
     '''
     assign_stmt : ID EQUALS gate_expr SEMICOLON
     '''
     p[0] = ('assign', p[1], p[3])
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Porta unária NOT(sinal) — aridade fixa de 1 operando garantida pela própria gramática.
 def p_gate_expr_not(p):
     '''
     gate_expr : NOT LPAREN ID RPAREN
     '''
     p[0] = ('gate', 'NOT', [p[3]])
 
+# [MODIFICAÇÃO - GRAMÁTICA / AÇÃO SEMÂNTICA]
+# Portas binárias AND(sinal1, sinal2) e OR(sinal1, sinal2) — aridade fixa de 2 operandos.
 def p_gate_expr_binary(p):
     '''
     gate_expr : AND LPAREN ID COMMA ID RPAREN
@@ -69,12 +97,16 @@ def p_gate_expr_binary(p):
     '''
     p[0] = ('gate', p[1], [p[3], p[5]])
 
+# [MODIFICAÇÃO - TRATAMENTO DE ERRO SINTÁTICO]
+# Reporta token inesperado com número de linha ou fim de arquivo prematuro (EOF).
 def p_error(p):
     if p:
         print(f"Syntax error at token '{p.value}' (line {p.lineno})")
     else:
         print("Syntax error: unexpected end of file (EOF)")
 
+# [CÓDIGO DE USUÁRIO - VISUALIZAÇÃO DA AST]
+# Função auxiliar para exibir a Árvore Sintática Abstrata (AST) em formato hierárquico no terminal.
 def print_ast_tree(node, prefix="", is_last=True):
     """
     Renders the Abstract Syntax Tree (AST) in a visual hierarchical tree format

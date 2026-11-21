@@ -49,6 +49,8 @@ BANNER = r"""
 """
 
 
+# [CÓDIGO DE USUÁRIO - DRIVER PRINCIPAL DO COMPILADOR]
+# Integra lexer (ply.lex), parser (ply.yacc), analisador semântico e backend de visualização.
 class AtomLogicCompiler:
     """Unified driver managing the compiler pipeline stages."""
 
@@ -69,9 +71,9 @@ class AtomLogicCompiler:
     ) -> ValidatedCircuit | None:
         """
         Executes the 3-stage compilation pipeline:
-        Stage 1: Lexical Analysis
-        Stage 2: Syntactic Analysis & AST Construction
-        Stage 3: Semantic Analysis & Graph/Cycle Validation
+        Stage 1: Lexical & Syntactic Analysis (AST Construction)
+        Stage 2: Semantic Analysis & Graph/Cycle Validation
+        Stage 3: Compilation Summary & Topological Execution Plan
         """
         if verbose:
             print(BANNER)
@@ -80,13 +82,14 @@ class AtomLogicCompiler:
             print("=" * 50)
 
         # ---------------------------------------------------------
-        # Stage 1 & 2: Lexical & Syntactic Analysis (Parser)
+        # Stage 1: Lexical & Syntactic Analysis (Lexer + Parser)
         # ---------------------------------------------------------
         if verbose:
             print("[Stage 1/3] Running Lexical Scanner & LALR(1) Parser...")
 
-        # Reset line tracking
+        # Reset lexer state for each compilation
         self.lexer.lineno = 1
+        self.lexer.has_lexical_error = False
 
         # Check for empty input
         if not source_code.strip():
@@ -94,6 +97,10 @@ class AtomLogicCompiler:
             return None
 
         ast = self.parser.parse(source_code, lexer=self.lexer)
+        if getattr(self.lexer, "has_lexical_error", False):
+            print("Compilation Error: Lexical analysis failed.")
+            return None
+
         if not ast:
             # Syntax errors are reported by p_error in parser.py
             print("Compilation Error: Syntactic analysis failed.")
@@ -111,7 +118,7 @@ class AtomLogicCompiler:
             parser_module.print_ast_tree(ast)
 
         # ---------------------------------------------------------
-        # Stage 3: Semantic Analysis & Electrical Graph Validation
+        # Stage 2: Semantic Analysis & Electrical Graph Validation
         # ---------------------------------------------------------
         if verbose:
             print("\n[Stage 2/3] Running Semantic Analysis & Electrical Validation...")
@@ -129,8 +136,11 @@ class AtomLogicCompiler:
             print("  ↳ Topological execution order computed.")
 
         # ---------------------------------------------------------
-        # Stage 4: Compilation Summary
+        # Stage 3: Compilation Summary & Topological Execution Plan
         # ---------------------------------------------------------
+        if verbose:
+            print("\n[Stage 3/3] Generating Compilation Summary & Execution Plan...")
+
         print("\n" + "=" * 50)
         print(f"Compilation Successful: Circuit '{circuit.name}'")
         print("=" * 50)

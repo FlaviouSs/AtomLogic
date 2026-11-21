@@ -2,6 +2,7 @@
 AtomLogic Circuit Visualizer (Netlistsvg Backend)
 =================================================
 
+[CÓDIGO DE USUÁRIO - BACKEND DE VISUALIZAÇÃO]
 Translates a ValidatedCircuit IR into a Yosys-compatible Netlist JSON
 and renders an IEEE-standard vector schematic using 'netlistsvg'.
 """

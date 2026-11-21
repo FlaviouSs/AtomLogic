@@ -41,6 +41,10 @@ class Symbol:
     is_driven: bool = False
 
 
+# [MODIFICAÇÃO / CÓDIGO DE USUÁRIO - TABELA DE SÍMBOLOS E ANÁLISE SEMÂNTICA]
+# Implementação completa de análise semântica sobre a AST gerada pelo parser PLY:
+# tabela de símbolos, regra de single-driver, verificação de sinais, detecção de ciclos (DAG) e ordenação topológica.
+
 class SymbolTable:
     """Stores and resolves signal identifiers within the circuit scope."""
     def __init__(self):
@@ -95,6 +99,8 @@ class ValidatedCircuit:
     topological_gates: list[GateInstance] = field(default_factory=list)
 
 
+# [MODIFICAÇÃO - ANALISADOR SEMÂNTICO]
+# Percorre a AST em 5 passes para validar regras elétricas/estruturais e gerar a IR (ValidatedCircuit).
 class SemanticAnalyzer:
     """Traverses and validates the Abstract Syntax Tree (AST)."""
 

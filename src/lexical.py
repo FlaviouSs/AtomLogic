@@ -20,6 +20,8 @@ Tokens:
 
 import ply.lex as lex
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Definição das palavras reservadas da DSL AtomLogic (substituindo tokens aritméticos do exemplo calc).
 reserved = {
     # Statements
     'CIRCUIT': 'CIRCUIT',
@@ -32,6 +34,8 @@ reserved = {
     'NOT': 'NOT',
 }
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Lista de tokens da linguagem (identificadores, delimitadores de bloco/lista e palavras reservadas).
 tokens = [
     # Identifier
     'ID',
@@ -47,6 +51,8 @@ tokens = [
 ] + list(reserved.values())
 
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Expressões regulares para os operadores e delimitadores da DSL.
 t_EQUALS = r'\='
 t_COMMA = r'\,'
 t_SEMICOLON = r'\;'
@@ -56,22 +62,31 @@ t_RBRACE = r'\}'
 t_LBRACE = r'\{'
 
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Regra de identificador com consulta à tabela de palavras reservadas.
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
     t.type = reserved.get(t.value, 'ID')
     return t
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Regra para descartar comentários de linha única (// ...).
 def t_COMMENT(t):
     r'//.*'
     pass
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Contagem de quebras de linha para relatório preciso de erros sintáticos e léxicos.
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
 
 t_ignore  = ' \t'
 
+# [MODIFICAÇÃO - ANÁLISE LÉXICA]
+# Tratamento de erro léxico: reporta linha/caractere inválido e sinaliza falha para interromper a compilação.
 def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
+    print(f"Illegal character '{t.value[0]}' (line {t.lexer.lineno})")
+    t.lexer.has_lexical_error = True
     t.lexer.skip(1)
 
