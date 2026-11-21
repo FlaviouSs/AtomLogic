@@ -169,6 +169,86 @@ The LALR(1) grammar and AST construction rules implemented in [`src/parser.py`](
 
 Once the AST is synthesized, [`src/semantic.py`](src/semantic.py) executes five validation passes over the tree: symbol table registration (`INPUT`/`OUTPUT` declarations and duplicate checks), gate arity & single-driver enforcement, undeclared/undriven signal checks, 3-state DFS cycle detection (DAG verification), and topological sorting.
 
+### Derivation Tree & Annotated Parse Tree
+
+Consider the following valid AtomLogic sentence:
+
+```dsl
+CIRCUIT Inv { INPUT A; OUTPUT Out; Out = NOT(A); }
+```
+
+#### 1. Concrete Derivation Tree (Parse Tree)
+
+```text
+circuit
+├── CIRCUIT
+├── ID ("Inv")
+├── LBRACE ("{")
+├── statement_list
+│   ├── statement_list
+│   │   ├── statement_list
+│   │   │   └── statement
+│   │   │       └── input_decl
+│   │   │           ├── INPUT
+│   │   │           ├── id_list
+│   │   │           │   └── ID ("A")
+│   │   │           └── SEMICOLON (";")
+│   │   └── statement
+│   │       └── output_decl
+│   │           ├── OUTPUT
+│   │           ├── id_list
+│   │           │   └── ID ("Out")
+│   │           └── SEMICOLON (";")
+│   └── statement
+│       └── assign_stmt
+│           ├── ID ("Out")
+│           ├── EQUALS ("=")
+│           ├── gate_expr
+│           │   ├── NOT
+│           │   ├── LPAREN ("(")
+│           │   ├── ID ("A")
+│           │   └── RPAREN (")")
+│           └── SEMICOLON (";")
+└── RBRACE ("}")
+```
+
+#### 2. Annotated Parse Tree (Synthesized Attributes)
+
+Each node shows its synthesized `node` (or terminal `lexval`) attribute computed bottom-up by the PLY semantic actions:
+
+```text
+circuit  [node = ('circuit', 'Inv', [('inputs', ['A']), ('outputs', ['Out']), ('assign', 'Out', ('gate', 'NOT', ['A']))])]
+├── CIRCUIT
+├── ID  [lexval = 'Inv']
+├── LBRACE
+├── statement_list  [node = [('inputs', ['A']), ('outputs', ['Out']), ('assign', 'Out', ('gate', 'NOT', ['A']))]]
+│   ├── statement_list  [node = [('inputs', ['A']), ('outputs', ['Out'])]]
+│   │   ├── statement_list  [node = [('inputs', ['A'])]]
+│   │   │   └── statement  [node = ('inputs', ['A'])]
+│   │   │       └── input_decl  [node = ('inputs', ['A'])]
+│   │   │           ├── INPUT
+│   │   │           ├── id_list  [node = ['A']]
+│   │   │           │   └── ID  [lexval = 'A']
+│   │   │           └── SEMICOLON
+│   │   └── statement  [node = ('outputs', ['Out'])]
+│   │       └── output_decl  [node = ('outputs', ['Out'])]
+│   │           ├── OUTPUT
+│   │           ├── id_list  [node = ['Out']]
+│   │           │   └── ID  [lexval = 'Out']
+│   │           └── SEMICOLON
+│   └── statement  [node = ('assign', 'Out', ('gate', 'NOT', ['A']))]
+│       └── assign_stmt  [node = ('assign', 'Out', ('gate', 'NOT', ['A']))]
+│           ├── ID  [lexval = 'Out']
+│           ├── EQUALS
+│           ├── gate_expr  [node = ('gate', 'NOT', ['A'])]
+│           │   ├── NOT
+│           │   ├── LPAREN
+│           │   ├── ID  [lexval = 'A']
+│           │   └── RPAREN
+│           └── SEMICOLON
+└── RBRACE
+```
+
 ---
 
 ## Example Circuits & Error Catalog
