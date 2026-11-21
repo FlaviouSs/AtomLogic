@@ -65,34 +65,33 @@ AtomLogic/
 
 ## Installation & Setup
 
-Requires **Python 3.10+** and **Node.js** (for `netlistsvg` diagram rendering).
+### Prerequisites
+
+* **Python 3.10+** (required for the compiler)
+* **Node.js & npm** (optional, required only for generating SVG schematics with `--svg`)
 
 ### 1. Python Environment Setup
+
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/flaviouss/AtomLogic.git
 cd AtomLogic
 
-# Create and activate virtual environment
+# Create and activate a virtual environment
 python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# Install compiler dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Netlistsvg Installation (Schematic Visualizer)
+### 2. Netlistsvg Installation (Optional — Schematic Visualizer)
 
-You have two options for running `netlistsvg`:
+To render IEEE vector schematics (`--svg`), install `netlistsvg` globally via `npm`:
 
-* **Automatic on-demand execution (zero-install):**
-  If Node.js is installed on your system, AtomLogic will automatically run `netlistsvg` on the fly using `npx`. No local `node_modules` directory or `package.json` file is needed.
-
-* **Global installation (recommended for faster rendering):**
-  Install `netlistsvg` globally to avoid on-demand npx overhead:
-  ```bash
-  npm install -g netlistsvg
-  ```
+```bash
+npm install -g netlistsvg
+```
 
 ---
 
@@ -144,6 +143,31 @@ CIRCUIT HalfAdder {
     Sum = AND(or_ab, not_carry);
 }
 ```
+
+---
+
+## Grammar Productions & Semantic Actions
+
+The LALR(1) grammar and AST construction rules implemented in [`src/parser.py`](src/parser.py) follow a Syntax-Directed Definition (SDD) with synthesized attributes (`p[0]` in PLY):
+
+| Production | Semantic Rule (SDD) | PLY Action (`src/parser.py`) |
+| :--- | :--- | :--- |
+| `circuit -> CIRCUIT ID { statement_list }` | `circuit.node = ('circuit', ID.lexval, statement_list.node)` | `p[0] = ('circuit', p[2], p[4])` |
+| `statement_list -> statement_list statement` | `statement_list₀.node = statement_list₁.node + [statement.node]` | `p[0] = p[1] + [p[2]]` |
+| `statement_list -> statement` | `statement_list.node = [statement.node]` | `p[0] = [p[1]]` |
+| `statement -> input_decl` | `statement.node = input_decl.node` | `p[0] = p[1]` |
+| `statement -> output_decl` | `statement.node = output_decl.node` | `p[0] = p[1]` |
+| `statement -> assign_stmt` | `statement.node = assign_stmt.node` | `p[0] = p[1]` |
+| `input_decl -> INPUT id_list ;` | `input_decl.node = ('inputs', id_list.node)` | `p[0] = ('inputs', p[2])` |
+| `output_decl -> OUTPUT id_list ;` | `output_decl.node = ('outputs', id_list.node)` | `p[0] = ('outputs', p[2])` |
+| `id_list -> id_list , ID` | `id_list₀.node = id_list₁.node + [ID.lexval]` | `p[0] = p[1] + [p[3]]` |
+| `id_list -> ID` | `id_list.node = [ID.lexval]` | `p[0] = [p[1]]` |
+| `assign_stmt -> ID = gate_expr ;` | `assign_stmt.node = ('assign', ID.lexval, gate_expr.node)` | `p[0] = ('assign', p[1], p[3])` |
+| `gate_expr -> NOT ( ID )` | `gate_expr.node = ('gate', 'NOT', [ID.lexval])` | `p[0] = ('gate', 'NOT', [p[3]])` |
+| `gate_expr -> AND ( ID , ID )` | `gate_expr.node = ('gate', 'AND', [ID₁.lexval, ID₂.lexval])` | `p[0] = ('gate', p[1], [p[3], p[5]])` |
+| `gate_expr -> OR ( ID , ID )` | `gate_expr.node = ('gate', 'OR', [ID₁.lexval, ID₂.lexval])` | `p[0] = ('gate', p[1], [p[3], p[5]])` |
+
+Once the AST is synthesized, [`src/semantic.py`](src/semantic.py) executes five validation passes over the tree: symbol table registration (`INPUT`/`OUTPUT` declarations and duplicate checks), gate arity & single-driver enforcement, undeclared/undriven signal checks, 3-state DFS cycle detection (DAG verification), and topological sorting.
 
 ---
 
